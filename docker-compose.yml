@@ -1,0 +1,14 @@
+services:
+  rpa:
+    build: .
+    image: dian-cufe-rpa:latest
+    shm_size: "2gb"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      HEADLESS: "false"
+    volumes:
+      - ./output:/app/output
+      - ./data:/app/data
+    command: ["python", "-m", "src.main", "rpa"]
