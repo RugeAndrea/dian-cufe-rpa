@@ -1,0 +1,2 @@
+﻿archivo,cufe,numero_factura,fecha_emision,nit_emisor,codigo,descripcion,cantidad,precio_unitario,cuadre_subtotal,requiere_revision
+01_eccc372e4bdb.pdf,eccc372e4bdb8125cf2e896b405ddb91918c7c6d92238892e3b36bd3b6a86929a3c47ed18ae8f559a1bf51b89ab560f1,FEBQ-243564,2024-11-05,800033723,0,MAMOGRAFIA UNILATERALO PIEZA QUIRURGICA,1.0,75000.0,True,False

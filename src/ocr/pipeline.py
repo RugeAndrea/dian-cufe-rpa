@@ -32,10 +32,13 @@ def _rss_mb() -> float:
 
 def _valid_format(item: dict) -> bool:
     """Objective per-field format check (independent of OCR confidence):
-    codigo must match the same whitelist charset it was OCR'd with;
-    cantidad/precio must be positive numbers; descripcion must be non-empty."""
+    codigo, when present, must match the same whitelist charset it was
+    OCR'd with -- but an EMPTY codigo is valid (verified on invoice 7: the
+    real DIAN invoice genuinely has no product code for that row, so a
+    blank codigo is correct, not a formatting error); cantidad/precio must
+    be positive numbers; descripcion must be non-empty."""
     codigo = item.get("codigo")
-    if not codigo or not CODIGO_FORMAT_RE.match(codigo):
+    if codigo and not CODIGO_FORMAT_RE.match(codigo):
         return False
     if not item.get("descripcion"):
         return False
@@ -309,22 +312,37 @@ def run_ocr_batch(rows: list[dict], metadata_store: dict, pdf_dir: Path, debug: 
     _finalize_items(all_items, threshold)
     alerta = _alert_precision_recall(all_items)
 
+    CSV_COLUMNS = [
+        "archivo", "cufe", "numero_factura", "fecha_emision", "nit_emisor",
+        "codigo", "descripcion", "cantidad", "precio_unitario",
+        "cuadre_subtotal", "requiere_revision",
+    ]
+
     dfs = []
     validaciones = {}
     for result in results:
         n = result["n"]
         own_items = [it for it in all_items if it["_n"] == n]
-        rows_out = [
-            {**it["_header"], **{k: v for k, v in it.items() if not k.startswith("_")}}
-            for it in own_items
-        ]
-        df = pd.DataFrame(rows_out)
+        rows_out = [{**it["_header"], **it} for it in own_items]
+        df = pd.DataFrame(rows_out, columns=CSV_COLUMNS) if rows_out else pd.DataFrame(columns=CSV_COLUMNS)
         OCR_CONFIG.csv_dir.mkdir(parents=True, exist_ok=True)
         safe_numero = (result["numero_factura"] or result["cufe"][:12]).replace("/", "-")
         df.to_csv(OCR_CONFIG.csv_dir / f"{n:02d}_{safe_numero}.csv", index=False, encoding="utf-8-sig")
         dfs.append(df)
         validaciones[result["cufe"]] = result.pop("validacion")
         result["requiere_revision_alguno"] = any(it["requiere_revision"] for it in own_items)
+        # confianza_min/formato_valido/subtotal_ocr are not in the CSV (a
+        # 0.00 confidence on an otherwise-correct row read as "something is
+        # wrong" to a human); they live here instead.
+        result["subtotal_ocr"] = own_items[0].get("subtotal_ocr") if own_items else None
+        result["items_detalle"] = [
+            {
+                "codigo": it.get("codigo"),
+                "confianza_min": it.get("confianza_min"),
+                "formato_valido": it.get("formato_valido"),
+            }
+            for it in own_items
+        ]
 
     consolidated = pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
     OCR_CONFIG.csv_dir.mkdir(parents=True, exist_ok=True)

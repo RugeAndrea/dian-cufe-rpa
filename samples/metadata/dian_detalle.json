@@ -1,0 +1,112 @@
+{
+  "eccc372e4bdb8125cf2e896b405ddb91918c7c6d92238892e3b36bd3b6a86929a3c47ed18ae8f559a1bf51b89ab560f1": {
+    "cufe": "eccc372e4bdb8125cf2e896b405ddb91918c7c6d92238892e3b36bd3b6a86929a3c47ed18ae8f559a1bf51b89ab560f1",
+    "serie": "FEBQ",
+    "folio": "243564",
+    "fecha_emision": "05-11-2024",
+    "emisor_nit": "800033723",
+    "emisor_nombre": "SERVICIOS MEDICOS OLIMPUS IPS SAS",
+    "receptor_nit": "900156264",
+    "receptor_nombre": "NUEVA EMPRESA PROMOTORA DE SALUD S.A",
+    "total": "$75,000"
+  },
+  "8e7b821b46445807245ad6c223d6a054923cea3e5dc59983e55a40cfeac2a4f570eccb198446b27d15c8d834c2e2ced9": {
+    "cufe": "8e7b821b46445807245ad6c223d6a054923cea3e5dc59983e55a40cfeac2a4f570eccb198446b27d15c8d834c2e2ced9",
+    "serie": "FE",
+    "folio": "184420",
+    "fecha_emision": "07-11-2024",
+    "emisor_nit": "900142282",
+    "emisor_nombre": "FUNDACION CLINICA LETICIA",
+    "receptor_nit": "900156264",
+    "receptor_nombre": "NUEVA EMPRESA PROMOTORA DE SALUD S A",
+    "total": "$42,400"
+  },
+  "6a7ec741dd95ff7f5240481b3ed287f85eea3b665a8b26b91b376095f9bb134d2397ec96586fd16e116ef247a6506770": {
+    "cufe": "6a7ec741dd95ff7f5240481b3ed287f85eea3b665a8b26b91b376095f9bb134d2397ec96586fd16e116ef247a6506770",
+    "serie": "FEHP",
+    "folio": "620761",
+    "fecha_emision": "08-11-2024",
+    "emisor_nit": "800099860",
+    "emisor_nombre": "E.S.E HOSPITAL SAN RAFAEL DE PACHO",
+    "receptor_nit": "900156264",
+    "receptor_nombre": "NUEVA E.P.S. S.A.",
+    "total": "$50,600"
+  },
+  "c2e740942c1925d57f2e82254f21992cbad461a0df57fd42a1475fbe71ba5ab68a824c03487cbc19e80c50e436dd30fe": {
+    "cufe": "c2e740942c1925d57f2e82254f21992cbad461a0df57fd42a1475fbe71ba5ab68a824c03487cbc19e80c50e436dd30fe",
+    "serie": "SFA",
+    "folio": "556956",
+    "fecha_emision": "28-06-2023",
+    "emisor_nit": "891180091",
+    "emisor_nombre": "HOSPITAL SAN FRANCISCO DE ASIS",
+    "receptor_nit": "900156264",
+    "receptor_nombre": "NUEVA EMPRESA PROMOTORA DE SALUD S.A.",
+    "total": "$290,800"
+  },
+  "3e6331e537f08a54ec2d9f38904afaae80b16ffa502a12fd9aba388048d50d76b311809be9236aaa1bd1cc781a9d87f3": {
+    "cufe": "3e6331e537f08a54ec2d9f38904afaae80b16ffa502a12fd9aba388048d50d76b311809be9236aaa1bd1cc781a9d87f3",
+    "serie": "FESR",
+    "folio": "15847",
+    "fecha_emision": "08-11-2024",
+    "emisor_nit": "900141467",
+    "emisor_nombre": "SALUD RENAL S.A.",
+    "receptor_nit": "900156264",
+    "receptor_nombre": "NUEVA E.P.S",
+    "total": "$663,203"
+  },
+  "f639eb72baf2e301eddde8e8e5087295831a12c781d4cf6b4671932cdfa3599223aa3375af807a1f5d66aa1543c9fb91": {
+    "cufe": "f639eb72baf2e301eddde8e8e5087295831a12c781d4cf6b4671932cdfa3599223aa3375af807a1f5d66aa1543c9fb91",
+    "serie": "FC",
+    "folio": "1861",
+    "fecha_emision": "01-11-2024",
+    "emisor_nit": "900717202",
+    "emisor_nombre": "CENTRO INTEGRAL DE DIAGNOSTICO MEDICO IPS S.A.S",
+    "receptor_nit": "900156264",
+    "receptor_nombre": "NUEVA EMPRESA PROMOTORA DE SALUD S.A.",
+    "total": "$658,733"
+  },
+  "2a90ab2ce6b54e505fc9f463bffb528244abef80d9ab1a9a39d771169c7cfe52b9a48b6feab1fdceb8b4b59ff6e319db": {
+    "cufe": "2a90ab2ce6b54e505fc9f463bffb528244abef80d9ab1a9a39d771169c7cfe52b9a48b6feab1fdceb8b4b59ff6e319db",
+    "serie": "HTFE",
+    "folio": "6599",
+    "fecha_emision": "04-11-2024",
+    "emisor_nit": "819001302",
+    "emisor_nombre": "EMPRESA SOCIAL DEL ESTADO HOSPITAL LOCAL DE TENERIFE",
+    "receptor_nit": "900156264",
+    "receptor_nombre": "NUEVA EPS",
+    "total": "$52,000"
+  },
+  "341a447c4891f8e302771bf6a6d95d7011e72d44a8cb670356cbb5e92549824eb0071c542261d837978cfd351d2131d1": {
+    "cufe": "341a447c4891f8e302771bf6a6d95d7011e72d44a8cb670356cbb5e92549824eb0071c542261d837978cfd351d2131d1",
+    "serie": "CRIA",
+    "folio": "1406",
+    "fecha_emision": "04-01-2025",
+    "emisor_nit": "900843572",
+    "emisor_nombre": "CENTRO DE REHABILITACION INTEGRAL DEL ARIARI CRIARI S.A.S 01 00",
+    "receptor_nit": "900156264",
+    "receptor_nombre": "NUEVA EPS S.A.",
+    "total": "$2,900,000"
+  },
+  "bbed883f80308e0e0e16e52a1286d71274b1a78419875458c590fcec41c065eda762aaef478775dc219de3c5e2d6400b": {
+    "cufe": "bbed883f80308e0e0e16e52a1286d71274b1a78419875458c590fcec41c065eda762aaef478775dc219de3c5e2d6400b",
+    "serie": "HISF",
+    "folio": "277602",
+    "fecha_emision": "05-11-2024",
+    "emisor_nit": "808003500",
+    "emisor_nombre": "HOSPITAL ISMAEL SILVA DE SILVANIA ESE",
+    "receptor_nit": "900156264",
+    "receptor_nombre": "NUEVA EPS S.A.",
+    "total": "$184,500"
+  },
+  "70d1aab6f793d4fc7151d69400138cf1bd147e54aaeaf274072898f9d12d979e86e8de79fef27668896db76589323ad0": {
+    "cufe": "70d1aab6f793d4fc7151d69400138cf1bd147e54aaeaf274072898f9d12d979e86e8de79fef27668896db76589323ad0",
+    "serie": "HUFE",
+    "folio": "510239",
+    "fecha_emision": "03-01-2025",
+    "emisor_nit": "800000118",
+    "emisor_nombre": "ESE HOSPITAL DPTAL UNIV DEL QUINDIO SAN JUAN DE DIOS",
+    "receptor_nit": "900156264",
+    "receptor_nombre": "NUEVA EMPRESA PROMOTORA DE SALUD S.A.",
+    "total": "$770,000"
+  }
+}

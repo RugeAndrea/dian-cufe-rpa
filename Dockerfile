@@ -37,7 +37,8 @@ RUN mkdir -p /usr/share/tessdata-best \
 WORKDIR /app
 
 COPY requirements.txt .
-RUN pip install -r requirements.txt
+RUN pip install -r requirements.txt \
+    && python -m patchright install ffmpeg
 
 COPY entrypoint.sh ./
 RUN chmod +x entrypoint.sh
@@ -45,5 +46,6 @@ RUN chmod +x entrypoint.sh
 COPY src ./src
 COPY data ./data
 COPY tests ./tests
+COPY samples ./samples
 
 ENTRYPOINT ["./entrypoint.sh"]

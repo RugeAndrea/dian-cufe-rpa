@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import csv
 import random
+import shutil
 import time
 from pathlib import Path
 from typing import Optional
@@ -18,7 +19,7 @@ from src.common.logging_setup import setup_logging
 from src.common.metrics import write_metrics
 from src.ocr.config import OCR_CONFIG
 from src.ocr.pipeline import run_ocr_batch
-from src.rpa.config import CONFIG
+from src.rpa.config import BASE_DIR, CONFIG
 from src.rpa.dian_client import CufeResult, SearchError, process_cufe
 from src.rpa.downloader import DownloadError
 from src.rpa.metadata import load_metadata_store, save_metadata_entry
@@ -106,7 +107,9 @@ def analyze_pdf(
     return paginas, cifrado, tiene_texto, password_ok_con
 
 
-def run_cufe(playwright, row: dict, logger, metadata_store: dict, force: bool) -> CufeResult:
+def run_cufe(
+    playwright, row: dict, logger, metadata_store: dict, force: bool, record_video: bool = False
+) -> CufeResult:
     n = int(row["n"])
     cufe = row["cufe"]
     nit = row["nit"]
@@ -133,7 +136,15 @@ def run_cufe(playwright, row: dict, logger, metadata_store: dict, force: bool) -
             headless=CONFIG.headless,
             args=list(CONFIG.browser_args),
         )
-        context = browser.new_context(accept_downloads=True)
+        context_kwargs = {"accept_downloads": True}
+        if record_video:
+            video_dir = CONFIG.output_dir / "videos"
+            video_dir.mkdir(parents=True, exist_ok=True)
+            context_kwargs["record_video_dir"] = str(video_dir)
+            # Reduced resolution so a single-CUFE demo clip stays well under
+            # 10 MB (the full 1366x768 capture does not).
+            context_kwargs["record_video_size"] = {"width": 960, "height": 540}
+        context = browser.new_context(**context_kwargs)
         total_start = time.perf_counter()
         try:
             process_result = process_cufe(context, cufe, nit, result)
@@ -185,14 +196,20 @@ def run_cufe(playwright, row: dict, logger, metadata_store: dict, force: bool) -
 def cmd_rpa(args: argparse.Namespace) -> None:
     logger = setup_logging(CONFIG.log_dir)
     rows = load_rows(limit=args.limit, only=args.only)
-    logger.info("procesando %s CUFE(s) (limit=%s, only=%s, force=%s)", len(rows), args.limit, args.only, args.force)
+    record_video = getattr(args, "record_video", False)
+    logger.info(
+        "procesando %s CUFE(s) (limit=%s, only=%s, force=%s, record_video=%s)",
+        len(rows), args.limit, args.only, args.force, record_video,
+    )
 
     metadata_store = load_metadata_store(CONFIG.metadata_file)
+    video_dir = CONFIG.output_dir / "videos"
+    videos_before = set(video_dir.glob("*.webm")) if video_dir.exists() else set()
 
     results: list[dict] = []
     with sync_playwright() as playwright:
         for i, row in enumerate(rows):
-            result = run_cufe(playwright, row, logger, metadata_store, args.force)
+            result = run_cufe(playwright, row, logger, metadata_store, args.force, record_video=record_video)
             results.append(result.__dict__)
             logger.info(
                 "[n=%s] estado=%s t_total=%ss intentos=%s error=%s",
@@ -211,15 +228,42 @@ def cmd_rpa(args: argparse.Namespace) -> None:
     )
     logger.info("metricas escritas en %s", CONFIG.metrics_file)
 
+    if record_video:
+        videos_after = set(video_dir.glob("*.webm")) if video_dir.exists() else set()
+        new_videos = sorted(videos_after - videos_before, key=lambda p: p.stat().st_mtime)
+        if new_videos:
+            target_dir = BASE_DIR / "samples" / "video"
+            target_dir.mkdir(parents=True, exist_ok=True)
+            target = target_dir / "rpa_demo.webm"
+            shutil.copyfile(new_videos[-1], target)
+            size_mb = target.stat().st_size / (1024 * 1024)
+            logger.info("video guardado en %s (%.2f MB)", target, size_mb)
+            if size_mb > 10:
+                logger.warning("el video supera 10 MB; considera bajar record_video_size o grabar solo 1 CUFE")
+        else:
+            logger.warning("record_video=True pero no se encontro ningun .webm nuevo en %s", video_dir)
+
 
 def cmd_ocr(args: argparse.Namespace) -> None:
     logger = setup_logging(CONFIG.log_dir)
     rows = load_rows(limit=args.limit, only=args.only)
-    logger.info("OCR: procesando %s factura(s) (limit=%s, only=%s, debug=%s)", len(rows), args.limit, args.only, args.debug)
+    input_dir = getattr(args, "input_dir", None)
+    pdf_dir = Path(input_dir) if input_dir else CONFIG.pdf_dir
+    logger.info(
+        "OCR: procesando %s factura(s) (limit=%s, only=%s, debug=%s, pdf_dir=%s)",
+        len(rows), args.limit, args.only, args.debug, pdf_dir,
+    )
 
     metadata_store = load_metadata_store(CONFIG.metadata_file)
+    if input_dir:
+        # --input-dir is meant to work on a fresh clone, without ever having
+        # run the RPA against the DIAN: fall back to samples/metadata for the
+        # detail-page reference fields used in validation.
+        sample_metadata = Path(input_dir).parent / "metadata" / "dian_detalle.json"
+        if sample_metadata.exists():
+            metadata_store.update(load_metadata_store(sample_metadata))
 
-    batch = run_ocr_batch(rows, metadata_store, CONFIG.pdf_dir, debug=args.debug)
+    batch = run_ocr_batch(rows, metadata_store, pdf_dir, debug=args.debug)
 
     for r in batch["results"]:
         logger.info(
@@ -251,12 +295,20 @@ def build_parser() -> argparse.ArgumentParser:
     rpa_parser.add_argument("--limit", type=int, default=None, help="Procesar solo los primeros N CUFE")
     rpa_parser.add_argument("--only", type=int, default=None, help="Procesar solo el CUFE con este numero (columna n)")
     rpa_parser.add_argument("--force", action="store_true", help="Volver a descargar aunque ya exista un PDF valido")
+    rpa_parser.add_argument(
+        "--record-video", action="store_true",
+        help="Graba la corrida con Playwright (record_video_dir) y copia el ultimo video a samples/video/rpa_demo.webm",
+    )
     rpa_parser.set_defaults(func=cmd_rpa)
 
     ocr_parser = subparsers.add_parser("ocr", help="Extrae encabezado y productos por OCR de los PDF ya descargados")
     ocr_parser.add_argument("--only", type=int, default=None, help="Procesar solo la factura con este numero (columna n)")
     ocr_parser.add_argument("--limit", type=int, default=None, help="Procesar solo las primeras N facturas")
     ocr_parser.add_argument("--debug", action="store_true", help="Guardar recortes/mascaras de depuracion en output/debug")
+    ocr_parser.add_argument(
+        "--input-dir", type=str, default=None,
+        help="Carpeta con los PDF a procesar (ej. samples/pdfs), en vez de output/pdfs",
+    )
     ocr_parser.set_defaults(func=cmd_ocr)
 
     all_parser = subparsers.add_parser("all", help="Corre rpa y luego ocr")
@@ -264,6 +316,8 @@ def build_parser() -> argparse.ArgumentParser:
     all_parser.add_argument("--only", type=int, default=None)
     all_parser.add_argument("--force", action="store_true")
     all_parser.add_argument("--debug", action="store_true")
+    all_parser.add_argument("--record-video", action="store_true")
+    all_parser.add_argument("--input-dir", type=str, default=None)
     all_parser.set_defaults(func=cmd_all)
 
     return parser

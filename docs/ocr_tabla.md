@@ -158,18 +158,26 @@ Esto es una limitación real del enfoque de confianza-por-palabra para este
 tipo de error, calibrada sobre una muestra de solo 10 facturas, no una
 constante universal.
 
+**Nota de corrección:** la primera versión de `_valid_format` exigía código
+no vacío, lo que marcaba como "formato inválido" la factura 7 (donde el
+código real de la DIAN SÍ está vacío) — un falso positivo por regla
+demasiado estricta, no un hallazgo real. Se corrigió: código vacío es
+válido; solo un código PRESENTE que no respete el alfabeto whitelist cuenta
+como formato inválido.
+
 **Precisión/recall de la alerta** (sobre las 10 facturas, 13 ítems, 5 con
-error real contra la referencia): precisión y recall dieron **0** — la
-única fila marcada (factura 7) lo fue por el chequeo de formato
-(`código` vacío), que en ese caso es un **falso positivo**: el código
-realmente está vacío en la factura original, no es un error de OCR. Los 5
-ítems con error real (2 en la factura 4 por una palabra sin espacio, 1 en la
-1 por la fusión "L"+"O", 1 en la 6 y 1 en la 9 por confusión de caracteres
-en el código) no quedaron marcados, porque ni el formato ni el subtotal los
-detectan (el subtotal cuadra igual, ya que el error está en texto, no en
-los montos) y la confianza no los distingue. Documentado como limitación:
-el mecanismo de alerta actual es objetivo y explicable, pero tiene bajo
-poder de detección para errores de 1-2 caracteres en campos de texto.
+error real contra la referencia), tras la corrección: **0 filas marcadas**,
+por lo que la precisión queda indefinida (0/0) y el recall es **0.0**
+(0 de 5). Los 5 ítems con error real (2 en la factura 4 por una palabra sin
+espacio, 1 en la 1 por la fusión "L"+"O", 1 en la 6 y 1 en la 9 por
+confusión de caracteres en el código) no quedan marcados: el subtotal cuadra
+igual (el error está en texto, no en los montos), el formato es sintácticamente
+válido (son caracteres permitidos, solo equivocados), y el umbral de
+confianza calibrado dio 0 (sección anterior). Documentado como limitación
+real: con los tres chequeos objetivos implementados, el mecanismo de alerta
+tiene recall nulo para errores de 1-2 caracteres en campos de texto — detecta
+bien problemas estructurales (formato, cuadre contable) pero no sustituye una
+revisión muestral para precisión de caracteres.
 
 ## Limitaciones conocidas (no resueltas de forma general)
 

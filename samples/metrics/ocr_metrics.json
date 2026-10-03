@@ -1,0 +1,373 @@
+{
+  "facturas": [
+    {
+      "n": 1,
+      "cufe": "eccc372e4bdb8125cf2e896b405ddb91918c7c6d92238892e3b36bd3b6a86929a3c47ed18ae8f559a1bf51b89ab560f1",
+      "archivo": "01_eccc372e4bdb.pdf",
+      "numero_factura": "FEBQ-243564",
+      "fecha_emision": "2024-11-05",
+      "nit_emisor": "800033723",
+      "n_items": 1,
+      "estado": "ok",
+      "error": null,
+      "tiempos": {
+        "render": 0.27,
+        "ocr_encabezado": 1.876,
+        "deteccion_tabla": 2.167,
+        "ocr_tabla": 0.665,
+        "parseo": 0.683,
+        "total": 5.662
+      },
+      "ram_pico_mb": 171.1,
+      "requiere_revision_alguno": false,
+      "subtotal_ocr": 75000.0,
+      "items_detalle": [
+        {
+          "codigo": "0",
+          "confianza_min": 80.692749,
+          "formato_valido": true
+        }
+      ]
+    },
+    {
+      "n": 2,
+      "cufe": "8e7b821b46445807245ad6c223d6a054923cea3e5dc59983e55a40cfeac2a4f570eccb198446b27d15c8d834c2e2ced9",
+      "archivo": "02_8e7b821b4644.pdf",
+      "numero_factura": "FE-184420",
+      "fecha_emision": "2024-11-07",
+      "nit_emisor": "900142282",
+      "n_items": 1,
+      "estado": "ok",
+      "error": null,
+      "tiempos": {
+        "render": 0.263,
+        "ocr_encabezado": 2.087,
+        "deteccion_tabla": 2.45,
+        "ocr_tabla": 0.711,
+        "parseo": 0.66,
+        "total": 6.172
+      },
+      "ram_pico_mb": 212.8,
+      "requiere_revision_alguno": false,
+      "subtotal_ocr": 42400.0,
+      "items_detalle": [
+        {
+          "codigo": "SPON1",
+          "confianza_min": 0.0,
+          "formato_valido": true
+        }
+      ]
+    },
+    {
+      "n": 3,
+      "cufe": "6a7ec741dd95ff7f5240481b3ed287f85eea3b665a8b26b91b376095f9bb134d2397ec96586fd16e116ef247a6506770",
+      "archivo": "03_6a7ec741dd95.pdf",
+      "numero_factura": "FEHP-620761",
+      "fecha_emision": "2024-11-08",
+      "nit_emisor": "800099860",
+      "n_items": 2,
+      "estado": "ok",
+      "error": null,
+      "tiempos": {
+        "render": 0.274,
+        "ocr_encabezado": 1.962,
+        "deteccion_tabla": 2.175,
+        "ocr_tabla": 1.308,
+        "parseo": 0.67,
+        "total": 6.39
+      },
+      "ram_pico_mb": 177.0,
+      "requiere_revision_alguno": false,
+      "subtotal_ocr": 50600.0,
+      "items_detalle": [
+        {
+          "codigo": "85121701",
+          "confianza_min": 45.723705,
+          "formato_valido": true
+        },
+        {
+          "codigo": "85121701",
+          "confianza_min": 45.723705,
+          "formato_valido": true
+        }
+      ]
+    },
+    {
+      "n": 4,
+      "cufe": "c2e740942c1925d57f2e82254f21992cbad461a0df57fd42a1475fbe71ba5ab68a824c03487cbc19e80c50e436dd30fe",
+      "archivo": "04_c2e740942c19.pdf",
+      "numero_factura": "SFA-556956",
+      "fecha_emision": "2023-06-28",
+      "nit_emisor": "891180091",
+      "n_items": 6,
+      "estado": "ok",
+      "error": null,
+      "tiempos": {
+        "render": 0.261,
+        "ocr_encabezado": 2.315,
+        "deteccion_tabla": 2.697,
+        "ocr_tabla": 4.33,
+        "parseo": 0.817,
+        "total": 10.421
+      },
+      "ram_pico_mb": 222.3,
+      "requiere_revision_alguno": false,
+      "subtotal_ocr": 290800.0,
+      "items_detalle": [
+        {
+          "codigo": "906249",
+          "confianza_min": 37.794952,
+          "formato_valido": true
+        },
+        {
+          "codigo": "902207",
+          "confianza_min": 37.794952,
+          "formato_valido": true
+        },
+        {
+          "codigo": "903841",
+          "confianza_min": 37.794952,
+          "formato_valido": true
+        },
+        {
+          "codigo": "911015",
+          "confianza_min": 37.794952,
+          "formato_valido": true
+        },
+        {
+          "codigo": "906317",
+          "confianza_min": 37.794952,
+          "formato_valido": true
+        },
+        {
+          "codigo": "906039",
+          "confianza_min": 37.794952,
+          "formato_valido": true
+        }
+      ]
+    },
+    {
+      "n": 5,
+      "cufe": "3e6331e537f08a54ec2d9f38904afaae80b16ffa502a12fd9aba388048d50d76b311809be9236aaa1bd1cc781a9d87f3",
+      "archivo": "05_3e6331e537f0.pdf",
+      "numero_factura": "FESR-15847",
+      "fecha_emision": "2024-11-08",
+      "nit_emisor": "900141467",
+      "n_items": 1,
+      "estado": "ok",
+      "error": null,
+      "tiempos": {
+        "render": 0.309,
+        "ocr_encabezado": 2.099,
+        "deteccion_tabla": 2.415,
+        "ocr_tabla": 0.778,
+        "parseo": 0.689,
+        "total": 6.29
+      },
+      "ram_pico_mb": 191.7,
+      "requiere_revision_alguno": false,
+      "subtotal_ocr": 663203.0,
+      "items_detalle": [
+        {
+          "codigo": "C40112",
+          "confianza_min": 1.529877,
+          "formato_valido": true
+        }
+      ]
+    },
+    {
+      "n": 6,
+      "cufe": "f639eb72baf2e301eddde8e8e5087295831a12c781d4cf6b4671932cdfa3599223aa3375af807a1f5d66aa1543c9fb91",
+      "archivo": "06_f639eb72baf2.pdf",
+      "numero_factura": "FC-1861",
+      "fecha_emision": "2024-11-01",
+      "nit_emisor": "900717202",
+      "n_items": 5,
+      "estado": "ok",
+      "error": null,
+      "tiempos": {
+        "render": 0.242,
+        "ocr_encabezado": 2.319,
+        "deteccion_tabla": 2.482,
+        "ocr_tabla": 3.416,
+        "parseo": 0.651,
+        "total": 9.112
+      },
+      "ram_pico_mb": 197.2,
+      "requiere_revision_alguno": false,
+      "subtotal_ocr": 658733.0,
+      "items_detalle": [
+        {
+          "codigo": "881436",
+          "confianza_min": 1.518173,
+          "formato_valido": true
+        },
+        {
+          "codigo": "881437",
+          "confianza_min": 1.518173,
+          "formato_valido": true
+        },
+        {
+          "codigo": "882262",
+          "confianza_min": 1.518173,
+          "formato_valido": true
+        },
+        {
+          "codigo": "E8S90304",
+          "confianza_min": 1.518173,
+          "formato_valido": true
+        },
+        {
+          "codigo": "E890288",
+          "confianza_min": 1.518173,
+          "formato_valido": true
+        }
+      ]
+    },
+    {
+      "n": 7,
+      "cufe": "2a90ab2ce6b54e505fc9f463bffb528244abef80d9ab1a9a39d771169c7cfe52b9a48b6feab1fdceb8b4b59ff6e319db",
+      "archivo": "07_2a90ab2ce6b5.pdf",
+      "numero_factura": "HTFE-6599",
+      "fecha_emision": "2024-11-04",
+      "nit_emisor": "819001302",
+      "n_items": 1,
+      "estado": "ok",
+      "error": null,
+      "tiempos": {
+        "render": 0.222,
+        "ocr_encabezado": 1.784,
+        "deteccion_tabla": 2.4,
+        "ocr_tabla": 0.675,
+        "parseo": 0.672,
+        "total": 5.753
+      },
+      "ram_pico_mb": 223.0,
+      "requiere_revision_alguno": false,
+      "subtotal_ocr": 52000.0,
+      "items_detalle": [
+        {
+          "codigo": null,
+          "confianza_min": 0.0,
+          "formato_valido": true
+        }
+      ]
+    },
+    {
+      "n": 8,
+      "cufe": "341a447c4891f8e302771bf6a6d95d7011e72d44a8cb670356cbb5e92549824eb0071c542261d837978cfd351d2131d1",
+      "archivo": "08_341a447c4891.pdf",
+      "numero_factura": "CRIA-1406",
+      "fecha_emision": "2025-01-04",
+      "nit_emisor": "900843572",
+      "n_items": 1,
+      "estado": "ok",
+      "error": null,
+      "tiempos": {
+        "render": 0.248,
+        "ocr_encabezado": 2.075,
+        "deteccion_tabla": 2.297,
+        "ocr_tabla": 0.712,
+        "parseo": 0.651,
+        "total": 5.985
+      },
+      "ram_pico_mb": 190.2,
+      "requiere_revision_alguno": false,
+      "subtotal_ocr": 2900000.0,
+      "items_detalle": [
+        {
+          "codigo": "938662",
+          "confianza_min": 16.798622,
+          "formato_valido": true
+        }
+      ]
+    },
+    {
+      "n": 9,
+      "cufe": "bbed883f80308e0e0e16e52a1286d71274b1a78419875458c590fcec41c065eda762aaef478775dc219de3c5e2d6400b",
+      "archivo": "09_bbed883f8030.pdf",
+      "numero_factura": "HISF-277602",
+      "fecha_emision": "2024-11-05",
+      "nit_emisor": "808003500",
+      "n_items": 2,
+      "estado": "ok",
+      "error": null,
+      "tiempos": {
+        "render": 0.225,
+        "ocr_encabezado": 1.962,
+        "deteccion_tabla": 2.247,
+        "ocr_tabla": 1.329,
+        "parseo": 0.712,
+        "total": 6.476
+      },
+      "ram_pico_mb": 190.2,
+      "requiere_revision_alguno": false,
+      "subtotal_ocr": 184500.0,
+      "items_detalle": [
+        {
+          "codigo": "S19911",
+          "confianza_min": 40.744598,
+          "formato_valido": true
+        },
+        {
+          "codigo": "519917",
+          "confianza_min": 33.198555,
+          "formato_valido": true
+        }
+      ]
+    },
+    {
+      "n": 10,
+      "cufe": "70d1aab6f793d4fc7151d69400138cf1bd147e54aaeaf274072898f9d12d979e86e8de79fef27668896db76589323ad0",
+      "archivo": "10_70d1aab6f793.pdf",
+      "numero_factura": "HUFE-510239",
+      "fecha_emision": "2025-01-03",
+      "nit_emisor": "800000118",
+      "n_items": 1,
+      "estado": "ok",
+      "error": null,
+      "tiempos": {
+        "render": 0.222,
+        "ocr_encabezado": 1.887,
+        "deteccion_tabla": 2.171,
+        "ocr_tabla": 0.681,
+        "parseo": 0.669,
+        "total": 5.631
+      },
+      "ram_pico_mb": 190.2,
+      "requiere_revision_alguno": false,
+      "subtotal_ocr": 770000.0,
+      "items_detalle": [
+        {
+          "codigo": "85121502",
+          "confianza_min": 55.055717,
+          "formato_valido": true
+        }
+      ]
+    }
+  ],
+  "resumen": {
+    "exitos": 10,
+    "total_facturas": 10,
+    "promedio_t_total": 6.789,
+    "mediana_t_total": 6.231,
+    "minimo_t_total": 5.631,
+    "maximo_t_total": 10.421,
+    "suma_t_total": 67.892,
+    "facturas_por_minuto": 8.84,
+    "proyeccion_1000_facturas": {
+      "promedio_rpa_s": 9.797,
+      "promedio_ocr_s": 6.789,
+      "promedio_combinado_s": 16.586,
+      "horas_estimadas_1000_facturas": 4.61
+    }
+  },
+  "umbral_confianza_calibrado": 0.0,
+  "alerta_requiere_revision": {
+    "precision": null,
+    "recall": 0.0,
+    "filas_marcadas": 0,
+    "filas_con_error_real": 5,
+    "verdaderos_positivos": 0
+  }
+}
