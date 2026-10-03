@@ -47,5 +47,6 @@ COPY src ./src
 COPY data ./data
 COPY tests ./tests
 COPY samples ./samples
+COPY scripts ./scripts
 
 ENTRYPOINT ["./entrypoint.sh"]

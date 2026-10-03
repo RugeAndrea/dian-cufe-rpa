@@ -179,9 +179,49 @@ tiene recall nulo para errores de 1-2 caracteres en campos de texto — detecta
 bien problemas estructurales (formato, cuadre contable) pero no sustituye una
 revisión muestral para precisión de caracteres.
 
+## Unión de líneas de Descripción por diccionario (`join_wrapped_lines`)
+
+La DIAN corta la Descripción por ancho de celda: a veces a mitad de palabra
+("UNILATERA" + "L"), a veces en un espacio que el generador simplemente
+elimina ("OBSTETRICA" + "CON") — ni la propia capa de texto del PDF conserva
+ese espacio. La regla anterior ("unir siempre sin espacio") producía
+palabras pegadas visibles en el CSV ("OBSTETRICACON", "MENSUALDEL",
+"DEARTERIAS", "CONTROLPOR", "SUEROU", "UNILATERALO").
+
+**El bug estaba oculto por la propia validación**: `extract_pdf_reference_products`
+(`validate.py`) unía las líneas de referencia con esa misma regla, así que el
+lado "correcto" estaba tan pegado como el OCR y ambos coincidían por
+construcción. La corrección fue doble: (1) reemplazar la regla por
+`join_wrapped_lines`, que decide el separador con `wordfreq.zipf_frequency`
+sobre español (frontera no alfabética → sin espacio; unión forma palabra →
+sin espacio; ambos fragmentos son palabra por sí solos pero la unión no →
+con espacio; cualquier otro caso → sin espacio); y (2) usar la **misma**
+función en `table.py` (OCR) y en `validate.py` (referencia), para que la
+validación mida la precisión real del OCR y no un artefacto de reglas de
+unión distintas. 8 casos reales de las 10 facturas están fijados en
+`tests/test_joiner.py`.
+
+**Efecto medible:** la factura 6 pasó de "OBSTETRICACON" a "OBSTETRICA CON"
+y la factura 4 (ítem 2) de "HEMATOCRITOGLOBINAO" a "HEMOGLOBINA HEMATOCRITO Y
+LEUCOGRAMA" — ambas ya puntuaban 100 % en la validación anterior porque
+coincidían con una referencia igualmente mal unida; el texto entregado
+ahora es correcto aunque el puntaje agregado no se mueva por eso.
+
+**Limitación residual, no corregida:** en la factura 4 (ítem 3), Tesseract
+funde "TE" y "A" en "TEA" **dentro de una misma línea OCR** ("...FLUIDO
+DIFEREN" + "TE A ORINA" → la segunda línea ya llega como "TEA ORINA"), antes
+de que `join_wrapped_lines` vea los fragmentos. Como "TEA" y "DIFEREN" superan
+el umbral `MIN_ZIPF=1.0`, la regla concluye que ambos son palabras por sí
+solas y decide que la unión necesita espacio, resultando en "DIFEREN TEA
+ORINA" en vez de "DIFERENTE A ORINA". Es la interacción de dos límites ya
+documentados (fusión de palabras cortas de Tesseract + umbral de frecuencia
+de la regla de unión), no un caso nuevo; no se agregó una regla específica
+para esta factura.
+
 ## Limitaciones conocidas (no resueltas de forma general)
 
-- Fusión de palabras de una sola letra en Tesseract (sección 6).
+- Fusión de palabras de una sola letra en Tesseract (sección 6), incluida su
+  interacción con `join_wrapped_lines` arriba.
 - Confusiones carácter-por-carácter en código/descripción cuando el valor es
   alfanumérico corto (S↔5, I↔1, inserción de acentos o letras falsas) — no
   hay whitelist aplicable ahí como sí la hay en cantidad/precio.
