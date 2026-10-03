@@ -17,6 +17,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         fonts-liberation \
         fonts-noto-color-emoji \
         fonts-dejavu-core \
+        tesseract-ocr \
+        tesseract-ocr-spa \
+        libgl1 \
     && wget -q -O /usr/share/keyrings/google-chrome.gpg.key https://dl.google.com/linux/linux_signing_key.pub \
     && gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg /usr/share/keyrings/google-chrome.gpg.key \
     && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
@@ -33,5 +36,6 @@ RUN chmod +x entrypoint.sh
 
 COPY src ./src
 COPY data ./data
+COPY tests ./tests
 
 ENTRYPOINT ["./entrypoint.sh"]

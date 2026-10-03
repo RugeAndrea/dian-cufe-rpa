@@ -16,6 +16,8 @@ from patchright.sync_api import sync_playwright
 
 from src.common.logging_setup import setup_logging
 from src.common.metrics import write_metrics
+from src.ocr.config import OCR_CONFIG
+from src.ocr.pipeline import run_ocr_batch
 from src.rpa.config import CONFIG
 from src.rpa.dian_client import CufeResult, SearchError, process_cufe
 from src.rpa.downloader import DownloadError
@@ -210,6 +212,37 @@ def cmd_rpa(args: argparse.Namespace) -> None:
     logger.info("metricas escritas en %s", CONFIG.metrics_file)
 
 
+def cmd_ocr(args: argparse.Namespace) -> None:
+    logger = setup_logging(CONFIG.log_dir)
+    rows = load_rows(limit=args.limit, only=args.only)
+    logger.info("OCR: procesando %s factura(s) (limit=%s, only=%s, debug=%s)", len(rows), args.limit, args.only, args.debug)
+
+    metadata_store = load_metadata_store(CONFIG.metadata_file)
+
+    batch = run_ocr_batch(rows, metadata_store, CONFIG.pdf_dir, debug=args.debug)
+
+    for r in batch["results"]:
+        logger.info(
+            "[n=%s] estado=%s items=%s t_total=%ss ram_pico=%sMB error=%s",
+            r["n"], r["estado"], r["n_items"], r["tiempos"].get("total"), r["ram_pico_mb"], r["error"],
+        )
+
+    summary = batch["metrics"]["resumen"]
+    logger.info(
+        "resumen OCR: %s/%s exitos, promedio=%ss, mediana=%ss, min=%ss, max=%ss, facturas/min=%s",
+        summary["exitos"], summary["total_facturas"], summary["promedio_t_total"],
+        summary["mediana_t_total"], summary["minimo_t_total"], summary["maximo_t_total"],
+        summary["facturas_por_minuto"],
+    )
+    logger.info("CSV consolidado en %s", OCR_CONFIG.consolidado_csv)
+    logger.info("metricas OCR en %s, validacion en %s", OCR_CONFIG.metrics_file, OCR_CONFIG.validation_file)
+
+
+def cmd_all(args: argparse.Namespace) -> None:
+    cmd_rpa(args)
+    cmd_ocr(args)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m src.main")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -219,6 +252,19 @@ def build_parser() -> argparse.ArgumentParser:
     rpa_parser.add_argument("--only", type=int, default=None, help="Procesar solo el CUFE con este numero (columna n)")
     rpa_parser.add_argument("--force", action="store_true", help="Volver a descargar aunque ya exista un PDF valido")
     rpa_parser.set_defaults(func=cmd_rpa)
+
+    ocr_parser = subparsers.add_parser("ocr", help="Extrae encabezado y productos por OCR de los PDF ya descargados")
+    ocr_parser.add_argument("--only", type=int, default=None, help="Procesar solo la factura con este numero (columna n)")
+    ocr_parser.add_argument("--limit", type=int, default=None, help="Procesar solo las primeras N facturas")
+    ocr_parser.add_argument("--debug", action="store_true", help="Guardar recortes/mascaras de depuracion en output/debug")
+    ocr_parser.set_defaults(func=cmd_ocr)
+
+    all_parser = subparsers.add_parser("all", help="Corre rpa y luego ocr")
+    all_parser.add_argument("--limit", type=int, default=None)
+    all_parser.add_argument("--only", type=int, default=None)
+    all_parser.add_argument("--force", action="store_true")
+    all_parser.add_argument("--debug", action="store_true")
+    all_parser.set_defaults(func=cmd_all)
 
     return parser
 
