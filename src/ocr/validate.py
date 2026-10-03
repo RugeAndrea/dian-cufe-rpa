@@ -149,6 +149,15 @@ def extract_pdf_reference_products(pdf_path: Path, nit: str) -> list[dict]:
         doc.close()
 
 
+def _norm_text(value) -> str:
+    """None and '' both mean "no value" -- they must compare equal, not as a
+    mismatch (verified on invoice 7: codigo is genuinely blank in both the
+    OCR output and the PDF reference, but the old comparison reported 0%
+    because the OCR side normalizes a blank cell to None while the
+    reference extractor keeps it as '', and None != '')."""
+    return "" if value is None else str(value)
+
+
 def validate_products(items: list[dict], reference: list[dict]) -> dict:
     n = max(len(items), len(reference))
     if n == 0:
@@ -162,9 +171,9 @@ def validate_products(items: list[dict], reference: list[dict]) -> dict:
         ref = reference[i] if i < len(reference) else {}
 
         if ref.get("codigo") is not None:
-            codigo_ok += int(item.get("codigo") == ref.get("codigo"))
+            codigo_ok += int(_norm_text(item.get("codigo")) == _norm_text(ref.get("codigo")))
         if ref.get("descripcion") is not None:
-            desc_ok += int((item.get("descripcion") or "") == ref.get("descripcion"))
+            desc_ok += int(_norm_text(item.get("descripcion")) == _norm_text(ref.get("descripcion")))
             cers.append(cer(item.get("descripcion"), ref.get("descripcion")))
         if ref.get("cantidad") is not None:
             cant_ok += int(item.get("cantidad") == ref.get("cantidad"))

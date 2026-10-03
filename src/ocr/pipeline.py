@@ -65,7 +65,9 @@ def process_invoice(
         track()
 
         with stage_timer() as t:
-            structure = detect_table_structure(image_paths, debug_dir=debug_dir, debug_prefix=debug_prefix)
+            structure = detect_table_structure(
+                image_paths, pdf_path, nit, n, cufe, debug_dir=debug_dir, debug_prefix=debug_prefix
+            )
         tiempos["deteccion_tabla"] = t["seconds"]
         track()
 

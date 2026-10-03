@@ -1,122 +1,139 @@
-# OCR de la tabla "Detalles de Productos": diseño y evidencia
+# OCR de la tabla "Detalles de Productos": diseño por celdas
 
-Este documento resume los hallazgos empíricos detrás de `src/ocr/table.py`.
-La extracción se hace **siempre** por OCR sobre el PNG renderizado; la capa
-de texto del PDF (PyMuPDF) se usa *solo* como referencia para medir
-precisión (`validate.py`) y, en esta investigación, para entender cómo el
-generador de la DIAN arma el HTML/PDF.
+Este documento resume la evidencia detrás de `src/ocr/table.py`. La
+extracción se hace **siempre** por OCR sobre la imagen; la capa de texto del
+PDF (PyMuPDF) se usa *solo* como referencia para medir precisión
+(`validate.py`).
 
-## 1. Detección de la región de la tabla
+## Diagnóstico que definió el enfoque
 
-La región va desde la palabra "Detalles" (de "Detalles de Productos") hasta
-el primer marcador de fin encontrado: "Notas" (Notas Finales), "Datos
-Totales" (título de página 2), **"Descuentos"** (Descuentos y Recargos
-Globales) o **"Referencias"**. Los dos últimos se agregaron tras encontrar,
-en las facturas 3, 5, 8 y 10, una segunda tabla (descuentos globales o
-referencias de pago) entre "Detalles de Productos" y "Notas Finales" — sin
-ese marcador, el recorte se extendía sobre esa segunda tabla y su encabezado
-("Nro. | Tipo | Código | Descripción | % | Valor") contaminaba el OCR del
-cuerpo de la tabla de productos.
+Se revisaron las facturas 4 y 6 (varios ítems) con `--debug`: **todas las
+filas de la tabla "Detalles de Productos" están separadas por líneas
+horizontales completas** (rejilla cerrada en cada celda, confirmado también
+en las facturas 1 y 3). Esto hace que "una fila de la rejilla = un ítem" sea
+una regla estructural fiable, en vez de inferir límites de ítem a partir de
+posiciones de palabras (el enfoque anterior, descartado).
 
-## 2. Encabezado de columnas: contaminación por Y, no por línea de Tesseract
+## 1. Región de la tabla, en alta resolución
 
-`find_header_row` identifica la fila de encabezados por **proximidad vertical
-real** al texto "Nro.", no por `line_num`/`block_num` de Tesseract. Motivo:
-en la factura 5, Tesseract agrupó los *labels* del encabezado (y≈2096-2103)
-y los *valores* de la primera fila de datos (y≈2233-2258, ~130px más abajo)
-en el mismo `line_num`/`block_num`. Eso intercaló un valor de datos
-("663.203,00") entre los tokens "Precio" y "unitario" en el orden
-izquierda-derecha, rompiendo el emparejamiento adyacente, y además empujó
-`header_bottom` (calculado como el `bottom` máximo de "header_words") muy
-adentro de la fila, cortando casi todo el cuerpo antes de que el OCR lo viera.
+La región (de "Detalles de Productos" al primer marcador de fin: "Notas",
+"Datos Totales", "Descuentos" o "Referencias") se ubica igual que antes,
+sobre el PNG de página completa a 300 DPI. Pero esa región se **vuelve a
+renderizar directamente desde el PDF a 600 DPI** (`page.get_pixmap(dpi=600,
+clip=rect)`), convirtiendo las coordenadas de píxel a puntos PDF
+(`px * 72/300`). Un recorte nativo a 600 DPI tiene tinta medible más limpia
+que una imagen de 300 DPI reescalada al doble.
 
-Además, ruido de un solo carácter (bordes de celda mal binarizados, leídos
-como ":", "7", etc.) aparece a veces exactamente a la misma altura Y que el
-encabezado real, cayendo justo entre "Precio" y "unitario". Se filtran los
-tokens de pura puntuación, y el emparejamiento "Precio"+"unitario" busca
-hacia adelante dentro de una ventana de distancia (no exige adyacencia de
-índice exacta), tolerando ese ruido.
+## 2. Celdas: contornos, no palabras
 
-## 3. Máscara de líneas: borrar solo líneas confirmadas, no cualquier trazo vertical
+Se detectan las posiciones de línea (`v_xs`, `h_ys`) igual que antes (perfil
+de suma de tinta tras apertura morfológica — una línea real domina la suma
+total; un trazo de letra nunca lo hace). Con esas posiciones se dibuja una
+máscara de rejilla **delgada y exacta** (no la máscara morfológica cruda,
+que también marcaría trazos de M/L/1), se invierte, y se buscan los
+contornos **hoja** de la jerarquía (`cv2.RETR_TREE`, contornos sin hijos):
+el interior de una celda vacía no tiene nada anidado dentro, así que cada
+celda real aparece como su propio contorno hoja. Cada caja se reduce 4 px
+por lado para no incluir el borde.
 
-La detección morfológica de líneas (apertura con kernels horizontal/vertical)
-sirve bien para **ubicar** las posiciones x/y de las líneas reales (los
-trazos de texto nunca acumulan tanta suma de píxeles como una línea que
-cruza todo el recorte). Pero usar esa misma máscara morfológica cruda para
-**borrar** píxeles antes del OCR del cuerpo destruye letras con trazos
-verticales largos (M, L, 1): una máscara 1×15 detecta cualquier trazo
-continuo ≥15px, y un trazo de letra a 300 DPI fácilmente supera eso. La
-solución: una vez confirmadas las posiciones `v_xs`/`h_ys` (por suma total,
-no por píxel individual), se dibuja una máscara **quirúrgica** de líneas
-delgadas exactamente en esas posiciones, y solo esa se resta de la imagen.
+**Hallazgo:** el recorte de 600 DPI incluye un margen en blanco antes del
+borde izquierdo real de la tabla (la región de render parte del borde de la
+página, no del borde de la tabla) y debajo de su última fila. Ese margen, al
+no tener líneas dentro, forma su propio contorno hoja tocando el borde de la
+imagen. Se descartan las cajas que tocan el borde del recorte por cualquier
+lado: una celda real siempre está delimitada por una línea en los cuatro
+lados; el margen nunca lo está.
 
-## 4. Agrupación de ítems: líneas huérfanas ancladas en "Nro.", no punto medio
+## 3. Encabezado: coincidencia exacta por celda
 
-Cada fila del cuerpo se identifica por un token numérico puro en la columna
-"Nro." (su "línea ancla"). Un enfoque anterior asignaba cada palabra al
-ancla numéricamente más cercana (punto medio entre anclas consecutivas).
-Eso falla con alturas de fila desiguales: en la factura 4, un ítem corto de
-3 líneas seguido de uno largo de 6 líneas hace que el punto medio caiga
-**debajo** de la primera línea de descripción del ítem largo (que, como en
-la factura 1, se renderiza *arriba* de su propia ancla por centrado
-vertical de celda), fusionándola con el ítem anterior.
+Se recorre fila por fila hasta encontrar una con una celda de texto exactamente
+"nro" (normalizado: recortado, minúsculas, sin punto final). Cada celda de
+esa fila se compara por **igualdad exacta** contra las etiquetas objetivo
+("código", "descripción", "cantidad", "precio unitario"). Esto resuelve de
+raíz la confusión con "Precio unitario de venta": al ser celdas
+independientes, el texto de esa columna nunca contiene la palabra "Precio"
+(que queda en la fila fusionada de arriba, junto a "IMPUESTOS") — su celda
+en la fila de encabezados real solo dice "unitario de venta", que no
+coincide con "precio unitario". Ya no hace falta ninguna heurística de
+distancia entre palabras ni lista de exclusión.
 
-Regla verificada en los datos: como mucho **una** línea huérfana queda arriba
-de su propia ancla; cualquier otra huérfana entre dos anclas es continuación
-del ítem **anterior**. Excepción verificada en la factura 8: una descripción
-de 4 líneas centra su ancla de forma que **dos** líneas quedan arriba — por
-eso, cuando no existe ítem previo (es el primer ítem del documento), TODAS
-las huérfanas pendientes se asignan a él (no solo la última), ya que no hay
-a dónde más asignarlas.
+## 4. Filas de ítems = filas de la rejilla
 
-## 5. Unión de líneas de Descripción: sin espacio, por evidencia, no por suposición
+Confirmado el diagnóstico (líneas horizontales completas), cada fila de
+celdas después del encabezado es directamente un ítem — no se necesita
+agrupar por número de ítem, línea huérfana, ni punto medio entre anclas
+(heurísticas eliminadas; ver sección de limitaciones conocidas de la versión
+anterior en el historial de commits). Las filas totalmente en blanco
+(remanente del margen inferior) se descartan con un conteo barato de
+densidad de tinta, sin necesidad de OCR.
 
-Se midió la capa de texto real (PyMuPDF) de las 10 facturas: de 23
-descripciones envueltas en 2+ líneas, 22 cortan estrictamente a mitad de
-palabra (p. ej. "UNILATERA" + "L" → "UNILATERAL"). La única excepción
-("...RAPIDA VIH" + "1 Y 2...") tiene, en el flujo de caracteres crudo del
-PDF (`page.get_text("rawdict")`), un espacio final invisible (ancho ~2pt,
-sin tinta) — pero la distancia geométrica al margen derecho de esa línea
-(4.46pt) es **estadísticamente idéntica** a la de cortes confirmados a mitad
-de palabra en la misma factura (4.44pt para "CPN HEMOGRAMA I (HEM" +
-"OGLOBINA"). Es decir: esa información solo existe en el flujo interno del
-PDF, nunca en la imagen renderizada — ningún heurístico geométrico sobre el
-OCR puede recuperarla. Por eso la regla implementada es **unir siempre sin
-espacio** entre líneas (correcta en ~96% de los casos observados, 22/23).
+## 5. OCR por celda
 
-## 6. Fusión Tesseract de palabras cortas adyacentes ("L"+"O" → "LO")
+- Código y Descripción: `--oem 1 --psm 6 -c preserve_interword_spaces=1`.
+- Cantidad y Precio unitario: `--psm 7` + whitelist `0123456789.,$`.
 
-Verificado en la factura 1: aunque exista un espacio visible entre "L" y
-"O", Tesseract las lee como un solo token "LO" en psm 6/11/4, a cualquier
-escala (2x-4x) y con `preserve_interword_spaces=1`. La causa no es el ancho
-del espacio sino la heurística interna de Tesseract para palabras de una
-sola letra. Solución: medir los espacios reales entre componentes conectados
-(OpenCV), calibrando el umbral con los espacios que Tesseract **sí** usó
-correctamente para separar otras palabras en la misma línea; si un token
-tiene un hueco interno comparable, se corta ahí y cada mitad se re-OCRiza
-por separado (con margen y upscale) en vez de adivinar cómo partir el string.
+**Hallazgo (invoice 1, celda Código="0"):** para el *mismo* recorte y el
+*mismo* config string, `image_to_data` (usado para obtener confianza por
+palabra) devolvió `"0.0"`, mientras `image_to_string` devolvió `"0"`
+correctamente. Es una diferencia real entre las dos rutas internas de
+Tesseract, no un bug propio. Solución: el **texto** de cada celda viene de
+`image_to_string`; `image_to_data` se usa aparte, solo para la confianza (su
+texto se descarta).
 
-## 7. Fusión Nro.+Código ("1"+"88143" → "188143")
+### Unión de líneas de Descripción
 
-Verificado en la factura 6: el OCR del cuerpo a veces lee el número de ítem
-y el código como un solo token cuando están muy cerca, y el centro de ese
-token cae dentro de la columna "Código" — por lo que la columna "Nro." nunca
-ve un dígito y el ancla del ítem se pierde. Se detecta cualquier palabra cuyo
-cuadro cruce el límite Nro./Código y empiece con un dígito, y se parte en
-dos: el primer carácter (número de ítem, en las facturas de este lote
-siempre 1 dígito) y el resto (código). No es un corte proporcional al conteo
-de caracteres: el dígito "1" es más angosto que el resto, así que el punto
-de corte real está más cerca del 17% del ancho que de 1/6.
+Igual que en el diseño anterior, las líneas dentro de una celda se unen
+**sin separador** entre ellas (cada línea interna conserva sus espacios
+normales). Evidencia: de 23 descripciones envueltas en 2+ líneas en las 10
+facturas, 22 cortan estrictamente a mitad de palabra; la única excepción
+tiene un espacio invisible en el flujo crudo del PDF indistinguible
+geométricamente de un corte a mitad de palabra (ver commit anterior para la
+medición completa). Esta regla no cambió con el rediseño.
 
-## Limitaciones conocidas (no resueltas, ver `ocr_validation.json`)
+## 6. Limitación documentada: Tesseract funde palabras de una sola letra
 
-- OCR de un solo carácter en aislamiento puede confundir letras con dígitos
-  ("O" → "0", "S" → "5", "I" → "1") en campos de texto libre (código,
-  descripción) — no hay whitelist aplicable ahí como sí la hay en
-  cantidad/precio.
-- Ruido geométrico ocasional (fragmentos de texto irreconocible al final de
-  una descripción) en facturas con una sola línea de producto corta; queda
-  correctamente señalado por `confianza_min` bajo y `requiere_revision=True`.
-- La detección de ancla "Nro." puede fallar si el dígito se funde con
-  texto vecino de forma distinta a los dos patrones descritos arriba
-  (verificado como causa de conteo de ítems incompleto en la factura 6).
+Verificado de nuevo en el nuevo recorte a 600 DPI: pese al espacio visible
+entre "L" y "O" ("...UNILATERA" + "L O PIEZA..."), Tesseract las lee como un
+solo token "LO". Se probaron exhaustivamente `psm` 3/4/6/11/12 × `oem` 1/3 ×
+`preserve_interword_spaces` 0/1 (20 combinaciones) sobre la celda real a 600
+DPI: **ninguna separa "L" de "O"**. No es un problema de resolución ni de
+configuración — es una heurística interna de Tesseract para palabras de una
+sola letra. Por instrucción explícita, no se reintrodujo la separación por
+componentes conectados (que sí lo resolvía) porque el nuevo enfoque por
+celdas debía simplificar el código; queda documentado como restricción no
+resuelta de forma general, afecta a 1 de 23 líneas envueltas observadas.
+
+## 7. Modelo de Tesseract: tessdata_best vs. el paquete por defecto
+
+Medido sobre las 10 facturas completas:
+
+| métrica | modelo por defecto (fast) | tessdata_best |
+|---|---|---|
+| código (% exacto) | 73.0% | 86.0% |
+| descripción (% exacto) | 81.7% | 85.0% |
+| descripción CER | 0.79% | 0.57% |
+| cantidad / precio | 100% / 100% | 100% / 100% |
+| CUFE CER (solo validación) | 1.15% | **60%** |
+| tiempo promedio OCR/factura | 6.07s | 8.38s (+38%) |
+| confianza mínima, factura 1 (perfecta) | 80.7 (pasa el umbral 80) | 35.3 (no pasa) |
+
+`tessdata_best` mejora código y descripción, pero con dos costos serios:
+hunde la confianza reportada tan por debajo de 80 que **ninguna fila pasa el
+umbral fijo**, incluida la factura 1 (perfecta) — con el umbral de 80 fijo
+por instrucción explícita, esto inutiliza `requiere_revision` como señal
+(todo queda marcado para revisión, incluso lo correcto). Además empeora
+drásticamente el reconocimiento del CUFE (1.15% → 60% CER) y es ~38% más
+lento. **Se mantiene el modelo por defecto** como el que tiene confianza
+calibrada de forma utilizable contra un umbral fijo; `tessdata_best` queda
+disponible vía `OCR_TESSDATA_DIR=/usr/share/tessdata-best` para quien
+prefiera priorizar código/descripción sobre la señal de confianza.
+
+## Limitaciones conocidas (no resueltas de forma general)
+
+- Fusión de palabras de una sola letra en Tesseract (sección 6).
+- Confusiones carácter-por-carácter en código/descripción cuando el valor es
+  alfanumérico corto (S↔5, I↔1, inserción de acentos o letras falsas) — no
+  hay whitelist aplicable ahí como sí la hay en cantidad/precio.
+- Ningún PDF del lote necesitó continuar la tabla a la página 2; esa ruta
+  (`continues_next_page`) se reporta pero no se implementó el merge
+  multi-página.

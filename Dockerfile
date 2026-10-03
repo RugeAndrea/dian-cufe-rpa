@@ -26,6 +26,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get update && apt-get install -y --no-install-recommends google-chrome-stable \
     && rm -rf /var/lib/apt/lists/* /usr/share/keyrings/google-chrome.gpg.key
 
+# tessdata_best: higher-accuracy LSTM model, kept alongside the apt package's
+# default ("fast") traineddata so OCR_CONFIG.tessdata_dir can select either
+# at runtime (see docs/ocr_tabla.md for the accuracy comparison that decided
+# which one the pipeline defaults to).
+RUN mkdir -p /usr/share/tessdata-best \
+    && wget -q -O /usr/share/tessdata-best/spa.traineddata \
+        https://github.com/tesseract-ocr/tessdata_best/raw/main/spa.traineddata
+
 WORKDIR /app
 
 COPY requirements.txt .

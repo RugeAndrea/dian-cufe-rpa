@@ -46,8 +46,14 @@ class Word:
         return self.top + self.height / 2
 
 
-def _config_string(psm: int, whitelist: Optional[str] = None, extra: Optional[str] = None) -> str:
+def _config_string(
+    psm: int, whitelist: Optional[str] = None, extra: Optional[str] = None, oem: Optional[int] = None
+) -> str:
     cfg = f"--psm {psm}"
+    if oem is not None:
+        cfg += f" --oem {oem}"
+    if OCR_CONFIG.tessdata_dir:
+        cfg += f' --tessdata-dir "{OCR_CONFIG.tessdata_dir}"'
     if whitelist:
         cfg += f' -c tessedit_char_whitelist="{whitelist}"'
     if extra:
@@ -60,8 +66,16 @@ def _coerce_image(image: ImageLike) -> ImageLike:
     return str(image) if isinstance(image, Path) else image
 
 
-def image_to_text(image: ImageLike, psm: int, lang: str = OCR_CONFIG.lang) -> str:
-    return pytesseract.image_to_string(_coerce_image(image), lang=lang, config=_config_string(psm))
+def image_to_text(
+    image: ImageLike,
+    psm: int,
+    lang: str = OCR_CONFIG.lang,
+    oem: Optional[int] = None,
+    extra_config: Optional[str] = None,
+) -> str:
+    return pytesseract.image_to_string(
+        _coerce_image(image), lang=lang, config=_config_string(psm, extra=extra_config, oem=oem)
+    )
 
 
 def image_to_words(
@@ -70,26 +84,29 @@ def image_to_words(
     lang: str = OCR_CONFIG.lang,
     whitelist: Optional[str] = None,
     extra_config: Optional[str] = None,
+    oem: Optional[int] = None,
 ) -> list[Word]:
-    """Returns one Word per recognized token, skipping empty/whitespace-only
-    entries (Tesseract's TSV always includes block/line/page placeholder
-    rows with empty text)."""
+    """Returns one Word per recognized token, ignoring tokens with empty text
+    or confidence < 0 (Tesseract's TSV marks non-text rows -- block/line/page
+    placeholders -- with conf=-1; those carry no evidence and must not be
+    treated as low-confidence real words)."""
     image = _coerce_image(image)
     data = pytesseract.image_to_data(
         image,
         lang=lang,
-        config=_config_string(psm, whitelist, extra_config),
+        config=_config_string(psm, whitelist, extra_config, oem),
         output_type=pytesseract.Output.DATAFRAME,
     )
     data = data.dropna(subset=["text"])
     data = data[data["text"].astype(str).str.strip() != ""]
+    data = data[data["conf"].astype(float) >= 0]
 
     words: list[Word] = []
     for _, row in data.iterrows():
         words.append(
             Word(
                 text=str(row["text"]),
-                conf=float(row["conf"]) if float(row["conf"]) >= 0 else 0.0,
+                conf=float(row["conf"]),
                 left=int(row["left"]),
                 top=int(row["top"]),
                 width=int(row["width"]),

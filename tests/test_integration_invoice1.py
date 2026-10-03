@@ -31,12 +31,15 @@ def test_invoice1_end_to_end_header_and_table():
     assert header["nit_emisor_raw"] == "800033723"
     assert header["cufe_ocr"] == CUFE_1
 
-    structure = detect_table_structure(image_paths)
+    structure = detect_table_structure(image_paths, pdf_path, NIT_1, 1, CUFE_1)
     assert structure["found"] is True
 
     items = ocr_table_items(structure)
     assert len(items) == 1
     assert items[0]["codigo_raw"] == "0"
-    assert "MAMOGRAFIA" in items[0]["descripcion_raw"]
+    # Tesseract merges the lone "L" and "O" tokens into "LO" regardless of
+    # psm/oem/preserve_interword_spaces (tried all combinations, see
+    # docs/ocr_tabla.md) -- a documented limitation, not a regression.
+    assert items[0]["descripcion_raw"] == "MAMOGRAFIA UNILATERALO PIEZA QUIRURGICA"
     assert items[0]["cantidad_raw"].replace(".", ",") in ("1,00",)
     assert "75.000" in items[0]["precio_unitario_raw"]
