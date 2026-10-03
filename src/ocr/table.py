@@ -21,6 +21,7 @@ from PIL import Image
 
 from .config import OCR_CONFIG
 from .engine import Word, image_to_text, image_to_words
+from .normalize import join_wrapped_lines
 
 SOURCE_DPI = 300  # dpi of the page-level PNGs used only to LOCATE the region
 TABLE_DPI = 600  # dpi the table itself is re-rendered at, straight from the PDF
@@ -358,11 +359,11 @@ def _ocr_text_cell(gray: np.ndarray, cell: Cell, whitelist: Optional[str] = None
     if whitelist:
         extra += f' -c tessedit_char_whitelist="{whitelist}"'
     raw = image_to_text(pil, psm=6, oem=1, extra_config=extra)
-    lines = [ln.strip() for ln in raw.splitlines() if ln.strip()]
-    # Join physical lines with NO separator -- data-driven rule (see
-    # docs/ocr_tabla.md): the DIAN generator wraps this column by raw
-    # character width, cutting mid-word in 22 of 23 observed cases.
-    text = "".join(lines)
+    # The DIAN generator wraps this column by raw pixel width, cutting
+    # mid-word as often as on a space the PDF then drops -- a Spanish
+    # word-frequency dictionary decides whether to re-insert the space
+    # (see docs/ocr_tabla.md and join_wrapped_lines's own docstring).
+    text = join_wrapped_lines(raw.splitlines())
     words = image_to_words(pil, psm=6, oem=1, whitelist=whitelist, extra_config="-c preserve_interword_spaces=1")
     return text, _field_confidence(words)
 

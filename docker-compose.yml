@@ -2,6 +2,8 @@ services:
   rpa:
     build: .
     image: dian-cufe-rpa:latest
+    platform: linux/amd64  # google-chrome-stable solo publica amd64; Docker
+                           # Desktop en Apple Silicon emula vía Rosetta.
     shm_size: "2gb"
     env_file:
       - path: .env

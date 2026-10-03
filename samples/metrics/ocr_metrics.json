@@ -11,14 +11,14 @@
       "estado": "ok",
       "error": null,
       "tiempos": {
-        "render": 0.27,
-        "ocr_encabezado": 1.876,
-        "deteccion_tabla": 2.167,
-        "ocr_tabla": 0.665,
-        "parseo": 0.683,
-        "total": 5.662
+        "render": 0.378,
+        "ocr_encabezado": 2.338,
+        "deteccion_tabla": 2.681,
+        "ocr_tabla": 0.918,
+        "parseo": 0.84,
+        "total": 7.156
       },
-      "ram_pico_mb": 171.1,
+      "ram_pico_mb": 200.6,
       "requiere_revision_alguno": false,
       "subtotal_ocr": 75000.0,
       "items_detalle": [
@@ -40,14 +40,14 @@
       "estado": "ok",
       "error": null,
       "tiempos": {
-        "render": 0.263,
-        "ocr_encabezado": 2.087,
-        "deteccion_tabla": 2.45,
-        "ocr_tabla": 0.711,
-        "parseo": 0.66,
-        "total": 6.172
+        "render": 0.383,
+        "ocr_encabezado": 2.261,
+        "deteccion_tabla": 2.98,
+        "ocr_tabla": 0.806,
+        "parseo": 0.808,
+        "total": 7.239
       },
-      "ram_pico_mb": 212.8,
+      "ram_pico_mb": 259.1,
       "requiere_revision_alguno": false,
       "subtotal_ocr": 42400.0,
       "items_detalle": [
@@ -69,14 +69,14 @@
       "estado": "ok",
       "error": null,
       "tiempos": {
-        "render": 0.274,
-        "ocr_encabezado": 1.962,
-        "deteccion_tabla": 2.175,
-        "ocr_tabla": 1.308,
-        "parseo": 0.67,
-        "total": 6.39
+        "render": 0.417,
+        "ocr_encabezado": 2.506,
+        "deteccion_tabla": 2.689,
+        "ocr_tabla": 1.624,
+        "parseo": 0.852,
+        "total": 8.089
       },
-      "ram_pico_mb": 177.0,
+      "ram_pico_mb": 226.4,
       "requiere_revision_alguno": false,
       "subtotal_ocr": 50600.0,
       "items_detalle": [
@@ -103,14 +103,14 @@
       "estado": "ok",
       "error": null,
       "tiempos": {
-        "render": 0.261,
-        "ocr_encabezado": 2.315,
-        "deteccion_tabla": 2.697,
-        "ocr_tabla": 4.33,
-        "parseo": 0.817,
-        "total": 10.421
+        "render": 0.411,
+        "ocr_encabezado": 2.82,
+        "deteccion_tabla": 3.17,
+        "ocr_tabla": 4.893,
+        "parseo": 0.808,
+        "total": 12.103
       },
-      "ram_pico_mb": 222.3,
+      "ram_pico_mb": 259.5,
       "requiere_revision_alguno": false,
       "subtotal_ocr": 290800.0,
       "items_detalle": [
@@ -157,14 +157,14 @@
       "estado": "ok",
       "error": null,
       "tiempos": {
-        "render": 0.309,
-        "ocr_encabezado": 2.099,
-        "deteccion_tabla": 2.415,
-        "ocr_tabla": 0.778,
-        "parseo": 0.689,
-        "total": 6.29
+        "render": 0.374,
+        "ocr_encabezado": 2.542,
+        "deteccion_tabla": 2.923,
+        "ocr_tabla": 1.115,
+        "parseo": 0.824,
+        "total": 7.779
       },
-      "ram_pico_mb": 191.7,
+      "ram_pico_mb": 228.9,
       "requiere_revision_alguno": false,
       "subtotal_ocr": 663203.0,
       "items_detalle": [
@@ -186,14 +186,14 @@
       "estado": "ok",
       "error": null,
       "tiempos": {
-        "render": 0.242,
-        "ocr_encabezado": 2.319,
-        "deteccion_tabla": 2.482,
-        "ocr_tabla": 3.416,
-        "parseo": 0.651,
-        "total": 9.112
+        "render": 0.41,
+        "ocr_encabezado": 2.992,
+        "deteccion_tabla": 3.221,
+        "ocr_tabla": 4.427,
+        "parseo": 0.795,
+        "total": 11.845
       },
-      "ram_pico_mb": 197.2,
+      "ram_pico_mb": 259.3,
       "requiere_revision_alguno": false,
       "subtotal_ocr": 658733.0,
       "items_detalle": [
@@ -235,14 +235,14 @@
       "estado": "ok",
       "error": null,
       "tiempos": {
-        "render": 0.222,
-        "ocr_encabezado": 1.784,
-        "deteccion_tabla": 2.4,
-        "ocr_tabla": 0.675,
-        "parseo": 0.672,
-        "total": 5.753
+        "render": 0.416,
+        "ocr_encabezado": 2.123,
+        "deteccion_tabla": 2.811,
+        "ocr_tabla": 0.773,
+        "parseo": 0.921,
+        "total": 7.046
       },
-      "ram_pico_mb": 223.0,
+      "ram_pico_mb": 260.3,
       "requiere_revision_alguno": false,
       "subtotal_ocr": 52000.0,
       "items_detalle": [
@@ -264,14 +264,14 @@
       "estado": "ok",
       "error": null,
       "tiempos": {
-        "render": 0.248,
-        "ocr_encabezado": 2.075,
-        "deteccion_tabla": 2.297,
-        "ocr_tabla": 0.712,
-        "parseo": 0.651,
-        "total": 5.985
+        "render": 0.386,
+        "ocr_encabezado": 3.241,
+        "deteccion_tabla": 3.299,
+        "ocr_tabla": 0.98,
+        "parseo": 1.054,
+        "total": 8.961
       },
-      "ram_pico_mb": 190.2,
+      "ram_pico_mb": 227.4,
       "requiere_revision_alguno": false,
       "subtotal_ocr": 2900000.0,
       "items_detalle": [
@@ -293,14 +293,14 @@
       "estado": "ok",
       "error": null,
       "tiempos": {
-        "render": 0.225,
-        "ocr_encabezado": 1.962,
-        "deteccion_tabla": 2.247,
-        "ocr_tabla": 1.329,
-        "parseo": 0.712,
-        "total": 6.476
+        "render": 0.304,
+        "ocr_encabezado": 5.747,
+        "deteccion_tabla": 4.066,
+        "ocr_tabla": 2.287,
+        "parseo": 1.105,
+        "total": 13.511
       },
-      "ram_pico_mb": 190.2,
+      "ram_pico_mb": 251.1,
       "requiere_revision_alguno": false,
       "subtotal_ocr": 184500.0,
       "items_detalle": [
@@ -327,14 +327,14 @@
       "estado": "ok",
       "error": null,
       "tiempos": {
-        "render": 0.222,
-        "ocr_encabezado": 1.887,
-        "deteccion_tabla": 2.171,
-        "ocr_tabla": 0.681,
-        "parseo": 0.669,
-        "total": 5.631
+        "render": 0.277,
+        "ocr_encabezado": 3.026,
+        "deteccion_tabla": 3.238,
+        "ocr_tabla": 1.273,
+        "parseo": 1.003,
+        "total": 8.818
       },
-      "ram_pico_mb": 190.2,
+      "ram_pico_mb": 251.1,
       "requiere_revision_alguno": false,
       "subtotal_ocr": 770000.0,
       "items_detalle": [
@@ -349,17 +349,17 @@
   "resumen": {
     "exitos": 10,
     "total_facturas": 10,
-    "promedio_t_total": 6.789,
-    "mediana_t_total": 6.231,
-    "minimo_t_total": 5.631,
-    "maximo_t_total": 10.421,
-    "suma_t_total": 67.892,
-    "facturas_por_minuto": 8.84,
+    "promedio_t_total": 9.255,
+    "mediana_t_total": 8.454,
+    "minimo_t_total": 7.046,
+    "maximo_t_total": 13.511,
+    "suma_t_total": 92.547,
+    "facturas_por_minuto": 6.48,
     "proyeccion_1000_facturas": {
-      "promedio_rpa_s": 9.797,
-      "promedio_ocr_s": 6.789,
-      "promedio_combinado_s": 16.586,
-      "horas_estimadas_1000_facturas": 4.61
+      "promedio_rpa_s": 12.56,
+      "promedio_ocr_s": 9.255,
+      "promedio_combinado_s": 21.815,
+      "horas_estimadas_1000_facturas": 6.06
     }
   },
   "umbral_confianza_calibrado": 0.0,

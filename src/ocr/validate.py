@@ -14,7 +14,7 @@ from typing import Optional
 
 import fitz  # PyMuPDF
 
-from .normalize import normalize_date, normalize_money, normalize_nit, normalize_quantity
+from .normalize import join_wrapped_lines, normalize_date, normalize_money, normalize_nit, normalize_quantity
 
 
 def levenshtein(a: str, b: str) -> int:
@@ -128,7 +128,13 @@ def extract_pdf_reference_products(pdf_path: Path, nit: str) -> list[dict]:
                     {
                         "codigo": str(row[col_map["codigo"]] or "").strip() if "codigo" in col_map else None,
                         "descripcion": (
-                            str(row[col_map["descripcion"]] or "").replace("\n", "").strip()
+                            # The PDF text layer keeps the DIAN generator's
+                            # own line breaks (and drops the same spaces the
+                            # OCR side has to guess back) -- join with the
+                            # SAME word-frequency rule used for the OCR'd
+                            # cell, so validation measures the OCR, not a
+                            # mismatch between two different join rules.
+                            join_wrapped_lines(str(row[col_map["descripcion"]] or "").split("\n"))
                             if "descripcion" in col_map
                             else None
                         ),
