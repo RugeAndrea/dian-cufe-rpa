@@ -1,10 +1,11 @@
 """Orchestrates the OCR pipeline for one invoice (render -> header -> table
--> normalize -> CSV) and for a full batch (+ consolidated CSV, metrics,
-validation).
+-> normalize) and for a full batch (calibrate confianza_min threshold ->
+finalize requiere_revision -> CSV -> metrics -> validation).
 """
 from __future__ import annotations
 
 import json
+import re
 import statistics
 import time
 from pathlib import Path
@@ -17,14 +18,34 @@ from ..common.metrics import stage_timer
 from ..rpa.config import BASE_DIR
 from .config import OCR_CONFIG
 from .exporter import PdfOpenError, render_pdf_to_png
-from .header import extract_header
+from .header import extract_header, extract_subtotal
 from .normalize import normalize_date, normalize_money, normalize_nit, normalize_quantity
 from .table import detect_table_structure, ocr_table_items
-from .validate import extract_pdf_reference_products, validate_header, validate_products
+from .validate import extract_pdf_reference_products, item_has_error, validate_header, validate_products
+
+CODIGO_FORMAT_RE = re.compile(r"^[A-Z0-9\-./]+$")
 
 
 def _rss_mb() -> float:
     return psutil.Process().memory_info().rss / (1024 * 1024)
+
+
+def _valid_format(item: dict) -> bool:
+    """Objective per-field format check (independent of OCR confidence):
+    codigo must match the same whitelist charset it was OCR'd with;
+    cantidad/precio must be positive numbers; descripcion must be non-empty."""
+    codigo = item.get("codigo")
+    if not codigo or not CODIGO_FORMAT_RE.match(codigo):
+        return False
+    if not item.get("descripcion"):
+        return False
+    cantidad = item.get("cantidad")
+    if cantidad is None or cantidad <= 0:
+        return False
+    precio = item.get("precio_unitario")
+    if precio is None or precio <= 0:
+        return False
+    return True
 
 
 def process_invoice(
@@ -50,7 +71,8 @@ def process_invoice(
     numero_factura = fecha_emision = nit_emisor = None
     header_data: dict = {}
     items: list[dict] = []
-    df = pd.DataFrame()
+    subtotal_ocr_raw = None
+    cuadre_subtotal = None
 
     t_total_start = time.perf_counter()
     try:
@@ -87,17 +109,6 @@ def process_invoice(
                 precio = normalize_money(raw.get("precio_unitario_raw"))
                 item_confs = [c for c in (confianza_encabezado, raw.get("confianza_min")) if c is not None]
                 confianza_min_item = min(item_confs) if item_confs else None
-                requiere_revision = bool(
-                    (confianza_min_item is not None and confianza_min_item < OCR_CONFIG.confidence_threshold)
-                    or confianza_min_item is None
-                    or cantidad is None
-                    or precio is None
-                    or not raw.get("codigo_raw")
-                    or not raw.get("descripcion_raw")
-                    or not numero_factura
-                    or not fecha_emision
-                    or not nit_emisor
-                )
                 items.append(
                     {
                         "codigo": raw.get("codigo_raw") or None,
@@ -105,7 +116,6 @@ def process_invoice(
                         "cantidad": cantidad,
                         "precio_unitario": precio,
                         "confianza_min": confianza_min_item,
-                        "requiere_revision": requiere_revision,
                     }
                 )
 
@@ -117,31 +127,28 @@ def process_invoice(
                         "cantidad": None,
                         "precio_unitario": None,
                         "confianza_min": confianza_encabezado,
-                        "requiere_revision": True,
                     }
                 )
-        tiempos["parseo"] = t["seconds"]
-        track()
 
-        with stage_timer() as t:
-            df = pd.DataFrame(
-                [
-                    {
-                        "archivo": pdf_path.name,
-                        "cufe": cufe,
-                        "numero_factura": numero_factura,
-                        "fecha_emision": fecha_emision,
-                        "nit_emisor": nit_emisor,
-                        **item,
-                    }
-                    for item in items
-                ]
+            for item in items:
+                item["formato_valido"] = _valid_format(item)
+
+            # Accounting cross-check: Sum(cantidad*precio) vs the invoice's
+            # own "Subtotal" (Datos Totales, page 2), tolerance 1 peso.
+            if len(image_paths) > 1:
+                subtotal_ocr_raw, _ = extract_subtotal(image_paths[1])
+            subtotal_value = normalize_money(subtotal_ocr_raw)
+            computed_sum = sum(
+                it["cantidad"] * it["precio_unitario"]
+                for it in items
+                if it.get("cantidad") is not None and it.get("precio_unitario") is not None
             )
-            OCR_CONFIG.csv_dir.mkdir(parents=True, exist_ok=True)
-            safe_numero = (numero_factura or cufe[:12]).replace("/", "-")
-            csv_path = OCR_CONFIG.csv_dir / f"{n:02d}_{safe_numero}.csv"
-            df.to_csv(csv_path, index=False, encoding="utf-8-sig")
-        tiempos["exportacion"] = t["seconds"]
+            if subtotal_value is not None:
+                cuadre_subtotal = abs(computed_sum - subtotal_value) <= 1.0
+            for item in items:
+                item["subtotal_ocr"] = subtotal_value
+                item["cuadre_subtotal"] = cuadre_subtotal
+        tiempos["parseo"] = t["seconds"]
         track()
 
     except Exception as exc:
@@ -151,6 +158,7 @@ def process_invoice(
     tiempos["total"] = round(time.perf_counter() - t_total_start, 3)
 
     validacion: dict = {}
+    reference_products: list[dict] = []
     try:
         header_validation = validate_header(
             numero_factura, fecha_emision, nit_emisor,
@@ -161,6 +169,10 @@ def process_invoice(
         validacion = {**header_validation, **products_validation}
     except Exception as exc:
         validacion = {"error": repr(exc)}
+
+    for i, item in enumerate(items):
+        ref = reference_products[i] if i < len(reference_products) else {}
+        item["_tiene_error_real"] = item_has_error(item, ref)
 
     return {
         "n": n,
@@ -174,9 +186,46 @@ def process_invoice(
         "error": error,
         "tiempos": tiempos,
         "ram_pico_mb": round(peak_rss, 1),
-        "df": df,
+        "items": items,
         "validacion": validacion,
     }
+
+
+def calibrate_confidence_threshold(all_items: list[dict]) -> float:
+    """Picks the confianza_min cutoff that best separates fields WITH a real
+    error (vs the PDF reference) from fields WITHOUT one, over this 10-invoice
+    sample. Documented limitation (see docs/ocr_tabla.md): calibrated on a
+    small sample, not a universal constant like the previous fixed 80."""
+    pairs = [
+        (it["confianza_min"], it["_tiene_error_real"])
+        for it in all_items
+        if it.get("confianza_min") is not None
+    ]
+    if not pairs:
+        return OCR_CONFIG.confidence_threshold
+
+    candidates = sorted({c for c, _ in pairs})
+    best_threshold, best_score = candidates[0], -1
+    for threshold in candidates:
+        tp = sum(1 for c, err in pairs if err and c < threshold)
+        fp = sum(1 for c, err in pairs if not err and c < threshold)
+        fn = sum(1 for c, err in pairs if err and c >= threshold)
+        tn = sum(1 for c, err in pairs if not err and c >= threshold)
+        score = tp + tn - fp - fn  # reward correct flags/clears, penalize both mistake types
+        if score > best_score:
+            best_score, best_threshold = score, threshold
+    return best_threshold
+
+
+def _finalize_items(items: list[dict], threshold: float) -> None:
+    for item in items:
+        confianza_min = item.get("confianza_min")
+        item["requiere_revision"] = bool(
+            not item["formato_valido"]
+            or item.get("cuadre_subtotal") is False
+            or confianza_min is None
+            or confianza_min < threshold
+        )
 
 
 def _rpa_projection(ocr_avg: Optional[float]) -> Optional[dict]:
@@ -215,10 +264,24 @@ def _metrics_summary(results: list[dict]) -> dict:
     }
 
 
+def _alert_precision_recall(all_items: list[dict]) -> dict:
+    flagged = [it for it in all_items if it["requiere_revision"]]
+    with_error = [it for it in all_items if it["_tiene_error_real"]]
+    true_positives = sum(1 for it in flagged if it["_tiene_error_real"])
+    precision = round(true_positives / len(flagged), 3) if flagged else None
+    recall = round(true_positives / len(with_error), 3) if with_error else None
+    return {
+        "precision": precision,
+        "recall": recall,
+        "filas_marcadas": len(flagged),
+        "filas_con_error_real": len(with_error),
+        "verdaderos_positivos": true_positives,
+    }
+
+
 def run_ocr_batch(rows: list[dict], metadata_store: dict, pdf_dir: Path, debug: bool = False) -> dict:
     results = []
-    dfs = []
-    validaciones = {}
+    all_items: list[dict] = []
 
     for row in rows:
         n = int(row["n"])
@@ -228,15 +291,51 @@ def run_ocr_batch(rows: list[dict], metadata_store: dict, pdf_dir: Path, debug: 
         metadata_entry = metadata_store.get(cufe)
 
         result = process_invoice(n, cufe, nit, pdf_path, metadata_entry, debug=debug)
-        dfs.append(result.pop("df"))
-        validaciones[cufe] = result.pop("validacion")
+        items = result.pop("items")
+        result["validacion"] = result.pop("validacion")
+        for item in items:
+            item["_n"] = result["n"]
+            item["_header"] = {
+                "archivo": result["archivo"],
+                "cufe": result["cufe"],
+                "numero_factura": result["numero_factura"],
+                "fecha_emision": result["fecha_emision"],
+                "nit_emisor": result["nit_emisor"],
+            }
+        all_items.extend(items)
         results.append(result)
+
+    threshold = calibrate_confidence_threshold(all_items)
+    _finalize_items(all_items, threshold)
+    alerta = _alert_precision_recall(all_items)
+
+    dfs = []
+    validaciones = {}
+    for result in results:
+        n = result["n"]
+        own_items = [it for it in all_items if it["_n"] == n]
+        rows_out = [
+            {**it["_header"], **{k: v for k, v in it.items() if not k.startswith("_")}}
+            for it in own_items
+        ]
+        df = pd.DataFrame(rows_out)
+        OCR_CONFIG.csv_dir.mkdir(parents=True, exist_ok=True)
+        safe_numero = (result["numero_factura"] or result["cufe"][:12]).replace("/", "-")
+        df.to_csv(OCR_CONFIG.csv_dir / f"{n:02d}_{safe_numero}.csv", index=False, encoding="utf-8-sig")
+        dfs.append(df)
+        validaciones[result["cufe"]] = result.pop("validacion")
+        result["requiere_revision_alguno"] = any(it["requiere_revision"] for it in own_items)
 
     consolidated = pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
     OCR_CONFIG.csv_dir.mkdir(parents=True, exist_ok=True)
     consolidated.to_csv(OCR_CONFIG.consolidado_csv, index=False, encoding="utf-8-sig")
 
-    metrics_payload = {"facturas": results, "resumen": _metrics_summary(results)}
+    metrics_payload = {
+        "facturas": results,
+        "resumen": _metrics_summary(results),
+        "umbral_confianza_calibrado": threshold,
+        "alerta_requiere_revision": alerta,
+    }
     OCR_CONFIG.metrics_file.parent.mkdir(parents=True, exist_ok=True)
     OCR_CONFIG.metrics_file.write_text(
         json.dumps(metrics_payload, ensure_ascii=False, indent=2), encoding="utf-8"

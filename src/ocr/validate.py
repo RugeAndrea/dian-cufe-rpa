@@ -158,6 +158,21 @@ def _norm_text(value) -> str:
     return "" if value is None else str(value)
 
 
+def item_has_error(item: dict, ref: dict) -> bool:
+    """True if ANY field differs from the reference (empty-vs-empty is not
+    an error). Used both to calibrate the confianza_min threshold and to
+    report requiere_revision's precision/recall against real errors."""
+    if ref.get("codigo") is not None and _norm_text(item.get("codigo")) != _norm_text(ref.get("codigo")):
+        return True
+    if ref.get("descripcion") is not None and _norm_text(item.get("descripcion")) != _norm_text(ref.get("descripcion")):
+        return True
+    if ref.get("cantidad") is not None and item.get("cantidad") != ref.get("cantidad"):
+        return True
+    if ref.get("precio_unitario") is not None and item.get("precio_unitario") != ref.get("precio_unitario"):
+        return True
+    return False
+
+
 def validate_products(items: list[dict], reference: list[dict]) -> dict:
     n = max(len(items), len(reference))
     if n == 0:

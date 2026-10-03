@@ -68,3 +68,24 @@ def extract_header(image_path: Path) -> dict:
         "cufe_ocr": cufe_ocr,
         "confianza_min_encabezado": min(confidences) if confidences else None,
     }
+
+
+def extract_subtotal(image_path_page2: Path) -> tuple[Optional[str], Optional[float]]:
+    """Reads 'Subtotal' from the 'Datos Totales' block on page 2, used only
+    for the accounting cross-check (Sum(cantidad*precio) == Subtotal), never
+    for the extracted data itself. The page has TWO 'Subtotal' labels (an
+    empty foreign-currency column, then the real COP column); the real
+    value sits to the right of whichever 'Subtotal' is further right."""
+    words = image_to_words(image_path_page2, psm=OCR_CONFIG.psm_header)
+    labels = [w for w in words if w.text.strip(":").lower() == "subtotal"]
+    if not labels:
+        return None, None
+    label = max(labels, key=lambda w: w.left)
+    candidates = [
+        w for w in words
+        if w.left > label.left and abs(w.top - label.top) <= 25 and re.match(r"^[\d.,]+$", w.text)
+    ]
+    if not candidates:
+        return None, None
+    value = min(candidates, key=lambda w: w.left)
+    return value.text, value.conf

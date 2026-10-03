@@ -336,8 +336,12 @@ def _crop_cell(gray: np.ndarray, cell: Cell, border: int = 3) -> np.ndarray:
     return crop
 
 
-def _ocr_text_cell(gray: np.ndarray, cell: Cell) -> tuple[str, Optional[float]]:
+def _ocr_text_cell(gray: np.ndarray, cell: Cell, whitelist: Optional[str] = None) -> tuple[str, Optional[float]]:
     """Codigo/Descripcion cells: --oem 1 --psm 6, preserve_interword_spaces.
+    Codigo additionally gets a whitelist (DIAN product codes are uppercase
+    alphanumeric) -- this eliminates by construction the stray accents and
+    duplicated letters Tesseract otherwise hallucinates into a short
+    alphanumeric token (verified: "SPON1"->"SPONÍ1", "C40112"->"Cc40112").
 
     Text comes from image_to_string, NOT image_to_data/image_to_words:
     verified on invoice 1's Codigo cell (a lone "0") that the two give
@@ -350,13 +354,16 @@ def _ocr_text_cell(gray: np.ndarray, cell: Cell) -> tuple[str, Optional[float]]:
     if crop.size == 0:
         return "", None
     pil = Image.fromarray(crop)
-    raw = image_to_text(pil, psm=6, oem=1, extra_config="-c preserve_interword_spaces=1")
+    extra = "-c preserve_interword_spaces=1"
+    if whitelist:
+        extra += f' -c tessedit_char_whitelist="{whitelist}"'
+    raw = image_to_text(pil, psm=6, oem=1, extra_config=extra)
     lines = [ln.strip() for ln in raw.splitlines() if ln.strip()]
     # Join physical lines with NO separator -- data-driven rule (see
     # docs/ocr_tabla.md): the DIAN generator wraps this column by raw
     # character width, cutting mid-word in 22 of 23 observed cases.
     text = "".join(lines)
-    words = image_to_words(pil, psm=6, oem=1, extra_config="-c preserve_interword_spaces=1")
+    words = image_to_words(pil, psm=6, oem=1, whitelist=whitelist, extra_config="-c preserve_interword_spaces=1")
     return text, _field_confidence(words)
 
 
@@ -385,7 +392,9 @@ def ocr_table_items(structure: dict) -> list[dict]:
         confs: dict[str, Optional[float]] = {}
 
         if "codigo" in columns and columns["codigo"] < len(row):
-            codigo_raw, confs["codigo"] = _ocr_text_cell(gray, row[columns["codigo"]])
+            codigo_raw, confs["codigo"] = _ocr_text_cell(
+                gray, row[columns["codigo"]], whitelist=OCR_CONFIG.codigo_whitelist
+            )
         if "descripcion" in columns and columns["descripcion"] < len(row):
             descripcion_raw, confs["descripcion"] = _ocr_text_cell(gray, row[columns["descripcion"]])
         if "cantidad" in columns and columns["cantidad"] < len(row):

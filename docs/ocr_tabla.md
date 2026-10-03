@@ -128,6 +128,49 @@ calibrada de forma utilizable contra un umbral fijo; `tessdata_best` queda
 disponible vía `OCR_TESSDATA_DIR=/usr/share/tessdata-best` para quien
 prefiera priorizar código/descripción sobre la señal de confianza.
 
+## 8. Whitelist de Código y requiere_revision objetivo (ajuste final)
+
+**Whitelist de Código** (`ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-./`): al
+restringir el alfabeto reconocible, Tesseract ya no puede alucinar acentos
+ni letras fuera de ese conjunto. Subió código de 73.0% a **93.0%** sobre las
+10 facturas (corrigió "SPONÍ1"→"SPON1", "Cc40112"→"C40112",
+"85121502"-casos). Lo que la whitelist **no puede** corregir son
+confusiones entre caracteres que SÍ están en el alfabeto permitido ("S"↔"5",
+inserciones como "E8S90304" por "E890304") — restricción documentada, sin
+regla específica por factura.
+
+**requiere_revision** dejó de ser solo un umbral de confianza fijo. Ahora:
+`formato inválido` (código no matchea el whitelist, descripción vacía,
+cantidad/precio no numéricos o ≤0) **O** `no cuadra el subtotal`
+(Σcantidad×precio vs. "Subtotal" de "Datos Totales"/página 2, OCR'd con el
+mismo `psm` del encabezado, tolerancia $1) **O** `confianza_min <
+umbral_calibrado`.
+
+**Calibración del umbral de confianza:** se probaron todos los cortes
+candidatos (cada confianza distinta observada) contra el acierto real
+(comparado con la capa de texto del PDF) en las 10 facturas, maximizando
+aciertos menos errores de clasificación. Resultado: **el umbral óptimo en
+esta muestra es 0** (equivalente a desactivar el chequeo de confianza) —
+los errores reales restantes (confusiones de un carácter como "S"/"5",
+palabras fundidas como "L"+"O") no vienen acompañados de confianza baja; en
+varios casos Tesseract está igual de "seguro" estando mal que estando bien.
+Esto es una limitación real del enfoque de confianza-por-palabra para este
+tipo de error, calibrada sobre una muestra de solo 10 facturas, no una
+constante universal.
+
+**Precisión/recall de la alerta** (sobre las 10 facturas, 13 ítems, 5 con
+error real contra la referencia): precisión y recall dieron **0** — la
+única fila marcada (factura 7) lo fue por el chequeo de formato
+(`código` vacío), que en ese caso es un **falso positivo**: el código
+realmente está vacío en la factura original, no es un error de OCR. Los 5
+ítems con error real (2 en la factura 4 por una palabra sin espacio, 1 en la
+1 por la fusión "L"+"O", 1 en la 6 y 1 en la 9 por confusión de caracteres
+en el código) no quedaron marcados, porque ni el formato ni el subtotal los
+detectan (el subtotal cuadra igual, ya que el error está en texto, no en
+los montos) y la confianza no los distingue. Documentado como limitación:
+el mecanismo de alerta actual es objetivo y explicable, pero tiene bajo
+poder de detección para errores de 1-2 caracteres en campos de texto.
+
 ## Limitaciones conocidas (no resueltas de forma general)
 
 - Fusión de palabras de una sola letra en Tesseract (sección 6).

@@ -20,6 +20,7 @@ class OcrConfig:
     psm_header: int = _env_int("OCR_PSM_HEADER", 4)
     psm_table_body: int = _env_int("OCR_PSM_TABLE_BODY", 6)
     numeric_whitelist: str = "0123456789.,$"
+    codigo_whitelist: str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-./"
     # Measured both on the 10-invoice batch (see docs/ocr_tabla.md):
     # tessdata_best raises codigo (73%->86%) and descripcion (81.7%->85%,
     # CER 0.79%->0.57%), but it also pushes per-word confidence so far down
